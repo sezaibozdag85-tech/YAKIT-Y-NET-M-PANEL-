@@ -87,7 +87,7 @@ input{
   color:#999;
 }
 
-button.save{
+.save{
   width:100%;
   margin-top:18px;
   padding:16px;
@@ -99,7 +99,7 @@ button.save{
   font-weight:bold;
 }
 
-button.save:disabled{
+.save:disabled{
   opacity:.5;
 }
 
@@ -129,11 +129,11 @@ button.save:disabled{
   background:#292929;
 }
 
-.row .dayname{
+.dayname{
   font-weight:bold;
 }
 
-.row .person{
+.person{
   color:#ddd;
 }
 
@@ -153,82 +153,79 @@ button.save:disabled{
   text-decoration:none;
   font-weight:bold;
 }
-
-.loading{
-  text-align:center;
-  color:#aaa;
-  padding:15px;
-}
 </style>
 </head>
 
 <body>
 
 <div class="wrap">
-  <div class="card">
+<div class="card">
 
-    <h1>⛽ YAKIT YÖNETİM GRUBU</h1>
+<h1>⛽ YAKIT YÖNETİM GRUBU</h1>
 
-    <div class="sub">
-      Her kurye uygun olduğu günü seçsin.
-    </div>
+<div class="sub">
+Her kurye uygun olduğu günü seçsin.
+</div>
 
-    <label for="name">Adınız</label>
-    <input
-      id="name"
-      type="text"
-      maxlength="60"
-      placeholder="Adınızı ve soyadınızı yazın"
-      autocomplete="name"
-    >
+<label for="name">Adınız</label>
 
-    <div class="days" id="days"></div>
+<input
+  id="name"
+  type="text"
+  maxlength="60"
+  placeholder="Adınızı ve soyadınızı yazın"
+  autocomplete="name"
+>
 
-    <button class="save" id="saveBtn" disabled>
-      Tercihimi Kaydet
-    </button>
+<div class="days" id="days"></div>
 
-    <div class="msg" id="msg"></div>
+<button class="save" id="saveBtn" disabled>
+Tercihimi Kaydet
+</button>
 
-    <div class="schedule">
-      <h2>📅 Haftalık Yakıt Sırası</h2>
-      <div id="schedule">
-        <div class="loading">Yükleniyor...</div>
-      </div>
-    </div>
+<div class="msg" id="msg"></div>
 
-    <a
-      class="whatsapp"
-      href="https://chat.whatsapp.com/IqbVAw86I2OKvyOY0sV3Mk"
-      target="_blank"
-    >
-      💬 WhatsApp Grubuna Katıl
-    </a>
+<div class="schedule">
+<h2>📅 Haftalık Yakıt Sırası</h2>
+<div id="schedule">
+  <div class="empty">Yükleniyor...</div>
+</div>
+</div>
 
-  </div>
+<a
+  class="whatsapp"
+  href="https://chat.whatsapp.com/IqbVAw86I2OKvyOY0sV3Mk"
+  target="_blank"
+  rel="noopener"
+>
+💬 WhatsApp Grubuna Katıl
+</a>
+
+</div>
 </div>
 
 <script>
+
 const SUPABASE_URL =
-  "https://wysvmjivmsezixvneauo.supabase.co";
+"https://wysvmjivmsezixvneauo.supabase.co";
 
 const SUPABASE_KEY =
-  "sb_publishable_uV528xaHjm5FBDG_csoZKw_a9n8jgBN";
+"sb_publishable_uV528xaHjm5FBDG_csoZKw_a9n8jgBN";
 
 const TABLE = "fuel_preferences";
 
 const DAYS = [
-  "Pazartesi",
-  "Salı",
-  "Çarşamba",
-  "Perşembe",
-  "Cuma",
-  "Cumartesi",
-  "Pazar"
+"Pazartesi",
+"Salı",
+"Çarşamba",
+"Perşembe",
+"Cuma",
+"Cumartesi",
+"Pazar"
 ];
 
-let selectedDay = "";
 let records = [];
+let selectedDay = "";
 
 const nameInput = document.getElementById("name");
 const daysBox = document.getElementById("days");
@@ -236,77 +233,94 @@ const saveBtn = document.getElementById("saveBtn");
 const msg = document.getElementById("msg");
 const scheduleBox = document.getElementById("schedule");
 
-function headers(extra = {}) {
+function apiHeaders(extra = {}) {
   return {
     "apikey": SUPABASE_KEY,
-    
     "Content-Type": "application/json",
     ...extra
   };
 }
 
-function showMessage(text, ok = false) {
+function showMessage(text, success = false) {
   msg.textContent = text;
-  msg.style.color = ok ? "#55d98b" : "#ff7070";
+  msg.style.color = success ? "#55d98b" : "#ff7070";
+}
+
+function sameName(a,b) {
+  return a.trim().toLocaleLowerCase("tr-TR") ===
+         b.trim().toLocaleLowerCase("tr-TR");
 }
 
 function renderDays() {
+
   daysBox.innerHTML = "";
 
   DAYS.forEach(day => {
-    const btn = document.createElement("button");
-    btn.className = "day";
-    btn.textContent = day;
 
-    const taken = records.some(r => r.day === day);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "day";
 
-    if (taken && day !== selectedDay) {
-      btn.classList.add("taken");
-      btn.textContent = day + " • DOLU";
+    const name = nameInput.value.trim();
+
+    const occupied = records.find(
+      r => r.day === day &&
+      (!name || !sameName(r.name,name))
+    );
+
+    if (occupied) {
+      button.classList.add("taken");
+      button.textContent = day + " • DOLU";
+    } else {
+      button.textContent = day;
     }
 
-    if (day === selectedDay) {
-      btn.classList.add("selected");
-      btn.textContent = day;
+    if (selectedDay === day) {
+      button.classList.remove("taken");
+      button.classList.add("selected");
+      button.textContent = day;
     }
 
-    btn.onclick = () => {
-      const name = nameInput.value.trim();
+    button.onclick = () => {
 
-      if (!name) {
+      const currentName = nameInput.value.trim();
+
+      if (!currentName) {
         showMessage("Önce adınızı yazın.");
         nameInput.focus();
         return;
       }
 
-      const existing = records.find(
-        r => r.name.toLowerCase() === name.toLowerCase()
-      );
-
-      const occupied = records.find(
+      const takenBy = records.find(
         r => r.day === day &&
-             r.name.toLowerCase() !== name.toLowerCase()
+        !sameName(r.name,currentName)
       );
 
-      if (occupied) {
-        showMessage(day + " günü " + occupied.name + " tarafından seçilmiş.");
+      if (takenBy) {
+        showMessage(
+          day + " günü " +
+          takenBy.name +
+          " tarafından seçilmiş."
+        );
         return;
       }
 
       selectedDay = day;
-      showMessage("");
       saveBtn.disabled = false;
+      showMessage("");
       renderDays();
     };
 
-    daysBox.appendChild(btn);
+    daysBox.appendChild(button);
   });
 }
 
 function renderSchedule() {
+
   scheduleBox.innerHTML = "";
 
   DAYS.forEach(day => {
+
     const row = document.createElement("div");
     row.className = "row";
 
@@ -317,10 +331,10 @@ function renderSchedule() {
     const person = document.createElement("div");
     person.className = "person";
 
-    const found = records.find(r => r.day === day);
+    const record = records.find(r => r.day === day);
 
-    if (found) {
-      person.textContent = found.name;
+    if (record) {
+      person.textContent = record.name;
     } else {
       person.textContent = "Boş";
       person.classList.add("empty");
@@ -333,36 +347,50 @@ function renderSchedule() {
 }
 
 async function loadRecords() {
+
   try {
-    const url =
+
+    const response = await fetch(
       SUPABASE_URL +
       "/rest/v1/" +
       TABLE +
-      "?select=id,name,day,created_at";
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: headers()
-    });
+      "?select=id,name,day,created_at&order=id.asc",
+      {
+        method:"GET",
+        headers:apiHeaders()
+      }
+    );
 
     if (!response.ok) {
-      throw new Error("Veriler alınamadı.");
+      const detail = await response.text();
+      throw new Error(
+        "Sunucu hatası (" +
+        response.status +
+        "): " +
+        detail
+      );
     }
 
     records = await response.json();
 
-    renderDays();
     renderSchedule();
+    renderDays();
 
-  } catch (error) {
+    showMessage("");
+
+  } catch(error) {
+
+    console.error(error);
+
     scheduleBox.innerHTML =
       '<div class="empty">Veriler yüklenemedi.</div>';
 
-    showMessage("Bağlantı hatası oluştu.");
+    showMessage("Bağlantı hatası: " + error.message);
   }
 }
 
 async function savePreference() {
+
   const name = nameInput.value.trim();
 
   if (!name) {
@@ -372,7 +400,24 @@ async function savePreference() {
   }
 
   if (!selectedDay) {
-    showMessage("Lütfen bir gün seçin.");
+    showMessage("Bir gün seçin.");
+    return;
+  }
+
+  const occupied = records.find(
+    r => r.day === selectedDay &&
+    !sameName(r.name,name)
+  );
+
+  if (occupied) {
+    showMessage(
+      selectedDay +
+      " günü " +
+      occupied.name +
+      " tarafından seçilmiş."
+    );
+
+    await loadRecords();
     return;
   }
 
@@ -381,136 +426,126 @@ async function savePreference() {
   showMessage("");
 
   try {
-    const findUrl =
-      SUPABASE_URL +
-      "/rest/v1/" +
-      TABLE +
-      "?select=id,name,day&name=eq." +
-      encodeURIComponent(name);
 
-    const findResponse = await fetch(findUrl, {
-      method: "GET",
-      headers: headers()
-    });
-
-    if (!findResponse.ok) {
-      throw new Error("Kayıt kontrol edilemedi.");
-    }
-
-    const existing = await findResponse.json();
-
-    const otherPerson = records.find(
-      r =>
-        r.day === selectedDay &&
-        r.name.toLowerCase() !== name.toLowerCase()
+    const existing = records.find(
+      r => sameName(r.name,name)
     );
-
-    if (otherPerson) {
-      throw new Error(
-        selectedDay + " günü " + otherPerson.name +
-        " tarafından seçilmiş."
-      );
-    }
 
     let response;
 
-    if (existing.length > 0) {
+    if (existing) {
 
-      const id = existing[0].id;
-
-      const updateUrl =
+      response = await fetch(
         SUPABASE_URL +
         "/rest/v1/" +
         TABLE +
         "?id=eq." +
-        encodeURIComponent(id);
-
-      response = await fetch(updateUrl, {
-        method: "PATCH",
-        headers: headers({
-          "Prefer": "return=representation"
-        }),
-        body: JSON.stringify({
-          day: selectedDay
-        })
-      });
+        encodeURIComponent(existing.id),
+        {
+          method:"PATCH",
+          headers:apiHeaders({
+            "Prefer":"return=representation"
+          }),
+          body:JSON.stringify({
+            name:name,
+            day:selectedDay
+          })
+        }
+      );
 
     } else {
 
-      const insertUrl =
+      response = await fetch(
         SUPABASE_URL +
         "/rest/v1/" +
-        TABLE;
-
-      response = await fetch(insertUrl, {
-        method: "POST",
-        headers: headers({
-          "Prefer": "return=representation"
-        }),
-        body: JSON.stringify({
-          name: name,
-          day: selectedDay
-        })
-      });
+        TABLE,
+        {
+          method:"POST",
+          headers:apiHeaders({
+            "Prefer":"return=representation"
+          }),
+          body:JSON.stringify({
+            name:name,
+            day:selectedDay
+          })
+        }
+      );
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
 
-      if (
-        response.status === 409 ||
-        errorText.includes("duplicate")
-      ) {
+      const detail = await response.text();
+
+      if (response.status === 409) {
         throw new Error(
-          "Bu gün az önce başka biri tarafından seçildi."
+          "Bu gün başka biri tarafından seçilmiş olabilir."
         );
       }
 
-      throw new Error("Kayıt sırasında hata oluştu.");
+      throw new Error(
+        "Sunucu hatası (" +
+        response.status +
+        "): " +
+        detail
+      );
     }
-
-    showMessage(
-      "✅ " + name + " için " + selectedDay +
-      " günü kaydedildi.",
-      true
-    );
 
     await loadRecords();
 
-  } catch (error) {
-    showMessage("❌ " + error.message);
-  }
+    showMessage(
+      "✅ " +
+      name +
+      " — " +
+      selectedDay +
+      " kaydedildi.",
+      true
+    );
 
-  saveBtn.disabled = false;
-  saveBtn.textContent = "Tercihimi Kaydet";
+  } catch(error) {
+
+    console.error(error);
+
+    showMessage(
+      "❌ " + error.message
+    );
+
+  } finally {
+
+    saveBtn.textContent = "Tercihimi Kaydet";
+    saveBtn.disabled = !selectedDay;
+  }
 }
 
 nameInput.addEventListener("input", () => {
+
   const name = nameInput.value.trim();
 
-  if (!name) {
-    selectedDay = "";
-    saveBtn.disabled = true;
-    renderDays();
-    return;
+  selectedDay = "";
+
+  if (name) {
+
+    const existing = records.find(
+      r => sameName(r.name,name)
+    );
+
+    if (existing) {
+      selectedDay = existing.day;
+    }
   }
 
-  const existing = records.find(
-    r => r.name.toLowerCase() === name.toLowerCase()
-  );
-
-  if (existing) {
-    selectedDay = existing.day;
-    saveBtn.disabled = false;
-  }
+  saveBtn.disabled = !selectedDay;
 
   renderDays();
 });
 
-saveBtn.addEventListener("click", savePreference);
+saveBtn.addEventListener(
+  "click",
+  savePreference
+);
 
 renderDays();
 loadRecords();
+
 </script>
 
 </body>
