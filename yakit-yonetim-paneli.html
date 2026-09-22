@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yakıt Yönetim Grubu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111;color:#fff;font-family:Arial,sans-serif}
+.wrap{max-width:520px;margin:auto;padding:18px}
+.card{background:#1c1c1c;border:1px solid #333;border-radius:18px;padding:18px;margin-bottom:16px}
+h1{text-align:center;margin:4px 0 8px;font-size:25px}p{text-align:center;color:#bbb;margin:0 0 18px}
+label{display:block;margin:12px 0 7px;font-weight:bold}
+input{width:100%;padding:15px;border-radius:12px;border:1px solid #555;background:#292929;color:#fff;font-size:17px}
+.days{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.day{padding:15px 8px;border:1px solid #555;border-radius:12px;background:#292929;color:#fff;font-weight:bold;font-size:16px}
+.day.selected{background:#d99a00;border-color:#ffc43d;color:#111}
+.day.taken{background:#3a2020;color:#999;border-color:#633;cursor:not-allowed}
+button.save{width:100%;margin-top:16px;padding:16px;border:0;border-radius:13px;background:#e6a400;color:#111;font-size:18px;font-weight:800}
+.msg{text-align:center;margin-top:12px;min-height:22px;color:#ffd36a}
+.row{display:flex;justify-content:space-between;padding:12px 5px;border-bottom:1px solid #333}
+.row:last-child{border:0}.empty{color:#777}.name{font-weight:bold}.takenText{color:#ffcf6b}
+.wa{display:block;text-align:center;text-decoration:none;padding:14px;border-radius:13px;background:#168c4b;color:#fff;font-weight:bold}
+.small{text-align:center;color:#777;font-size:12px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<h1>⛽ YAKIT YÖNETİM GRUBU</h1>
+<p>Adını yaz, uygun yakıt gününü seç ve kaydet.</p>
+<label for="name">Ad Soyad</label>
+<input id="name" placeholder="Adınızı yazın" autocomplete="name">
+<label>Yakıt gününü seç</label>
+<div class="days" id="days"></div>
+<button class="save" id="save">TERCİHİMİ KAYDET</button>
+<div class="msg" id="msg"></div>
+</div>
+<div class="card">
+<h2 style="margin-top:0">📅 Haftalık Program</h2>
+<div id="schedule"></div>
+</div>
+<div class="card">
+<a class="wa" href="https://chat.whatsapp.com/IqbVAw86I2OKvyOY0sV3Mk">💬 YAKIT WHATSAPP GRUBU</a>
+<div class="small">Tercihler bu cihazdaki tarayıcıda saklanır.</div>
+</div>
+</div>
+<script>
+const days=["Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","Pazar"];
+let data=JSON.parse(localStorage.getItem("yakitProgram")||"{}");
+let selected="";
+const daysEl=document.getElementById("days"), scheduleEl=document.getElementById("schedule");
+function render(){
+ daysEl.innerHTML="";
+ days.forEach(d=>{
+  const b=document.createElement("button"); b.className="day";
+  b.textContent=d+(data[d]?" — DOLU":"");
+  if(data[d]) b.classList.add("taken");
+  if(selected===d) b.classList.add("selected");
+  b.disabled=!!data[d];
+  b.onclick=()=>{selected=d; render()};
+  daysEl.appendChild(b);
+ });
+ scheduleEl.innerHTML=days.map(d=>`<div class="row"><span>${d}</span><span class="${data[d]?'name takenText':'empty'}">${data[d]||"Boş"}</span></div>`).join("");
+}
+document.getElementById("save").onclick=()=>{
+ const name=document.getElementById("name").value.trim(), msg=document.getElementById("msg");
+ if(!name){msg.textContent="Önce adınızı yazın.";return}
+ if(!selected){msg.textContent="Lütfen bir gün seçin.";return}
+ if(data[selected]){msg.textContent="Bu gün dolu, başka bir gün seçin.";selected="";render();return}
+ data[selected]=name; localStorage.setItem("yakitProgram",JSON.stringify(data));
+ msg.textContent=`Kaydedildi: ${name} — ${selected}`;
+ document.getElementById("name").value=""; selected=""; render();
+};
+render();
+</script>
+</body>
+</html>
